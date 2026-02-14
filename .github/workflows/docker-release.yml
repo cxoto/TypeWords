@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: cxoto/typewords
 
 jobs:
   build-and-push:
@@ -20,6 +19,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set Docker image name
+        id: image-name
+        run: |
+          DOCKER_USER="${{ vars.DOCKER_USERNAME || github.repository_owner }}"
+          IMAGE_NAME="${DOCKER_USER}/typewords"
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "Using Docker image: ${IMAGE_NAME}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -37,7 +44,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ steps.image-name.outputs.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -62,6 +69,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ env.IMAGE_NAME }}
+          repository: ${{ steps.image-name.outputs.IMAGE_NAME }}
           short-description: "TypeWords - Learn English, one keystroke at a time"
           readme-filepath: ./README.md
